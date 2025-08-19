@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -35,6 +36,8 @@ static float totalTime = 0;
 static float clearColor[4] = {.0f};
 
 void processInput(GLFWwindow *window);
+int saveShaderTextToFile(char data[65536], unsigned char savePosition);
+int loadShaderFromFile(unsigned char savePosition, char* writeTo);
 
 int main() {
     cout << "Running..." << std::endl;
@@ -50,7 +53,7 @@ int main() {
     // glfwWindowHint(GLFW_RESIZABLE, 0);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
 
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Population Simulator", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Shader Playground", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create window" << std::endl;
         glfwTerminate();
@@ -91,6 +94,8 @@ int main() {
     // --------------------
     // Init Variables
     // --------------------
+
+    unsigned char currentShaderSaveIndex = 0;
 
     // Core
 
@@ -156,17 +161,26 @@ int main() {
         }
     }, false);
 
-    UIFrame shaderMakerFrame("SHADER MAKER", [](){
+    UIFrame shaderMakerFrame("SHADER MAKER", [&currentShaderSaveIndex](){
         ImGui::InputTextMultiline("Fragment Shader Code", shaderCodeBuffer, sizeof(shaderCodeBuffer), ImVec2(0,160));
         if (ImGui::Button("Compile"))
         {
             compileShader(shaderCodeBuffer);
         }
+        ImGui::InputScalar("Save Position", ImGuiDataType_U8, &currentShaderSaveIndex);
+        if (ImGui::Button("Save Shader"))
+        {
+            saveShaderTextToFile(shaderCodeBuffer, currentShaderSaveIndex);
+        }
+        if (ImGui::Button("Load Shader"))
+        {
+            loadShaderFromFile(currentShaderSaveIndex, shaderCodeBuffer);
+        }
     }, false);
 
-    UIFrame shaderInfoFrame("SHADER INFO", [](){
-        ImGui::TextWrapped("");
-    }, false);
+    // UIFrame shaderInfoFrame("SHADER INFO", [](){
+    //     ImGui::TextWrapped("");
+    // }, false);
 
     static vector<UIFrame*> frames = {&infoFrame, &shaderMakerFrame};
 
@@ -227,4 +241,45 @@ int main() {
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+}
+int saveShaderTextToFile(char data[65536], unsigned char savePosition)
+{
+    std::fstream saveFile;
+    long long position = 65536 * savePosition;
+    std::fstream file("shaderSaves.ss1", std::ios::in | std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open shader savefile!" << std::endl;
+        return 1;
+    }
+
+    file.seekp(position);
+
+    file << data;
+
+    file.close();
+
+    std::cout << "Shader saved at ID <" << static_cast<unsigned int>(savePosition) << "> (" << position << ")!" << std::endl;
+
+    return 0;
+}
+int loadShaderFromFile(unsigned char savePosition, char* writeTo)
+{
+    std::fstream saveFile;
+    long long position = 65536 * savePosition;
+    std::fstream file("shaderSaves.ss1", std::ios::in | std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open shader savefile!" << std::endl;
+        return 1;
+    }
+
+    file.seekp(position);
+
+    file.read(writeTo, 65536);
+
+    file.close();
+    return 0;
 }
