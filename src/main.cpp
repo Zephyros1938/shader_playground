@@ -254,9 +254,9 @@ int saveShaderTextToFile(char data[65536], unsigned char savePosition)
         return 1;
     }
 
-    file.seekp(position);
+    file.seekg(position);
 
-    file << data;
+    file.write(data, 65536);
 
     file.close();
 
@@ -276,10 +276,11 @@ int loadShaderFromFile(unsigned char savePosition, char* writeTo)
         return 1;
     }
 
-    file.seekp(position);
+    file.seekg(position);
 
     file.read(writeTo, 65536);
 
     file.close();
+    std::cout << "Shader loaded at ID <" << static_cast<unsigned int>(savePosition) << "> (" << position << ")!" << std::endl;
     return 0;
 }
