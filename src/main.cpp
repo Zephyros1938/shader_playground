@@ -21,6 +21,9 @@ static int WINDOW_HEIGHT = 1080;
 
 static double MOUSE_X, MOUSE_Y = 0;
 
+static bool GUI_ENABLED = true;
+static bool G_KEYSTATES[GLFW_KEY_LAST + 1] = {false};
+
 static char DEFAULT_FRAGMENT_DATA[65536] = R"(#version 460 core
 out vec4 FragColor;
 in vec2 TexCoord;
@@ -29,6 +32,7 @@ void main()
 {
     FragColor = vec4(TexCoord, 0.0, 1.0);
 })";
+static char SAVEFILE_LOCATION[256] = R"(shaderSaves.ss1)";
 
 static float deltaTime = 0.;
 static float totalTime = 0;
@@ -77,6 +81,23 @@ int main() {
     glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y){
         MOUSE_X = x;
         MOUSE_Y = y;
+    });
+
+    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods){
+        if (key == GLFW_KEY_F1 && action == GLFW_PRESS && !G_KEYSTATES[key])
+        {
+            GUI_ENABLED = !GUI_ENABLED;
+        }
+
+        // manage key states
+        if (action == GLFW_PRESS)
+        {
+            G_KEYSTATES[key] = true;
+        }
+        else if (action == GLFW_RELEASE)
+        {
+            G_KEYSTATES[key] = false;
+        }
     });
 
     // --------------------
@@ -195,17 +216,20 @@ int main() {
         previousTime = currentTime;
         totalTime += deltaTime;
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        for (UIFrame *f : frames)
+        if (GUI_ENABLED)
         {
-            f->draw();
-        }
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-        // Rendering
-        ImGui::Render();
+            for (UIFrame *f : frames)
+            {
+                f->draw();
+            }
+
+            // Rendering
+            ImGui::Render();
+        }
         glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -213,6 +237,7 @@ int main() {
         shaderPreview.setFloat("u_time", totalTime);
         shaderPreview.setFloat("u_delta", deltaTime);
         shaderPreview.setVec2("u_mouse", MOUSE_X / WINDOW_WIDTH, MOUSE_Y / WINDOW_HEIGHT);
+        shaderPreview.setVec2("u_mousep", MOUSE_X, MOUSE_Y);
 
         {
             int width, height;
@@ -221,7 +246,7 @@ int main() {
         }
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        if (GUI_ENABLED) ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
