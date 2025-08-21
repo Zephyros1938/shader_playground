@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <format>
 
 // ImGui includes
 #include "imgui.h"
@@ -176,6 +177,12 @@ int main() {
         ImGui::Text("u_time: %.8f", totalTime);
         ImGui::Text("u_mouse: (%.8f, %.8f)", MOUSE_X / WINDOW_WIDTH, MOUSE_Y / WINDOW_HEIGHT);
         ImGui::Text("u_resolution: (%i, %i)", WINDOW_WIDTH, WINDOW_HEIGHT);
+        std::string result = "[";
+        for (int i = 0; i < 349; ++i) {
+            if (G_KEYSTATES[i]) result += std::format("{}{}", i, (i < 348 ? ", " : ""));
+        }
+        result += "]";
+        ImGui::Text("u_keyx: %s", result.c_str());
         if (ImGui::Button("Exit"))
         {
             glfwSetWindowShouldClose(window, true);
@@ -238,7 +245,13 @@ int main() {
         shaderPreview.setFloat("u_delta", deltaTime);
         shaderPreview.setVec2("u_mouse", MOUSE_X / WINDOW_WIDTH, MOUSE_Y / WINDOW_HEIGHT);
         shaderPreview.setVec2("u_mousep", MOUSE_X, MOUSE_Y);
-
+        for (int i = 0; i < 349; i++)
+        {
+            std::string formatted = std::format("u_key{}", i);
+            // cout << formatted << endl;
+            // return 0;
+            shaderPreview.setBool(formatted, G_KEYSTATES[i]);
+        }
         {
             int width, height;
             glfwGetFramebufferSize(window, &width, &height);
