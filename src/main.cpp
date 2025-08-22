@@ -92,8 +92,6 @@ int main() {
         {
             GUI_ENABLED = !GUI_ENABLED;
         }
-
-        // manage key states
         if (action == GLFW_PRESS)
         {
             G_KEYSTATES[key] = true;
@@ -163,7 +161,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    Camera c = Camera(CURRENT_CAMERA, 1920, 1080);
+    Camera c = Camera(CURRENT_CAMERA);
 
     // --------------------
     // Functions
@@ -177,7 +175,7 @@ int main() {
     // Declare Frames
     // --------------------
 
-    UIFrame infoFrame("INFO", [&previousTime, &window]() {
+    UIFrame infoFrame("INFO", [&c, &previousTime, &window]() {
         ImGui::Text("u_delta: %.8f", deltaTime);
         ImGui::Text("u_time: %.8f", totalTime);
         ImGui::Text("u_mouse: (%.8f, %.8f)", MOUSE_X / WINDOW_WIDTH, MOUSE_Y / WINDOW_HEIGHT);
@@ -198,6 +196,10 @@ int main() {
         {
             CAPTURE_CAMERA = !CAPTURE_CAMERA;
         }
+        if (ImGui::Button("Switch Camera"))
+        {
+            c.switchCaptureDevice(CURRENT_CAMERA);
+        }
     }, false);
 
     UIFrame shaderMakerFrame("SHADER MAKER", [&currentShaderSaveIndex](){
@@ -217,11 +219,13 @@ int main() {
         }
     }, false);
 
+    UIFrame shaderErrorLog("SHADER ERROR LOG", [&shaderPreview](){ImGui::TextWrapped("%s",shaderPreview.getErrorLog().c_str());});
+
     // UIFrame shaderInfoFrame("SHADER INFO", [](){
     //     ImGui::TextWrapped("");
     // }, false);
 
-    static vector<UIFrame*> frames = {&infoFrame, &shaderMakerFrame};
+    static vector<UIFrame*> frames = {&infoFrame, &shaderMakerFrame, &shaderErrorLog};
 
     // --------------------
     // Main Loop

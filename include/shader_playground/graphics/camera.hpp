@@ -10,7 +10,6 @@ public:
     cv::Mat Frame;
     cv::VideoCapture cap;
     GLuint textureID;
-    int width, height = 0;
 
     Camera(int cameraNumber, int width = 640, int height = 480)
     {
@@ -57,6 +56,22 @@ public:
         glActiveTexture(textureUnit);
         glBindTexture(GL_TEXTURE_2D, textureID);
     }
+
+    void switchCaptureDevice(int cameraNumber)
+    {
+        cap.release();
+        cap = cv::VideoCapture(cameraNumber, cv::CAP_V4L2);
+    }
+
+    void release()
+    {
+        cap.release();
+    }
 };
+
+#endif
+
+#ifndef THREADED_CAMERA
+#define THREADED_CAMERA
 
 #endif
