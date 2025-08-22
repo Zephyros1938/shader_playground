@@ -3,8 +3,8 @@
 #include <fstream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <opencv2/opencv.hpp>
 #include <iostream>
-#include <format>
 
 // ImGui includes
 #include "imgui.h"
@@ -13,6 +13,7 @@
 
 // Game Includes
 #include <shader_playground/graphics/shader.hpp>
+#include <shader_playground/graphics/camera.hpp>
 #include <shader_playground/gui/core.hpp>
 
 using namespace std;
@@ -24,6 +25,8 @@ static double MOUSE_X, MOUSE_Y = 0;
 
 static bool GUI_ENABLED = true;
 static bool G_KEYSTATES[GLFW_KEY_LAST + 1] = {false};
+static bool CAPTURE_CAMERA = false;
+static int CURRENT_CAMERA = 0;
 
 static char DEFAULT_FRAGMENT_DATA[65536] = R"(#version 460 core
 out vec4 FragColor;
@@ -160,6 +163,8 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    Camera c = Camera(CURRENT_CAMERA, 1920, 1080);
+
     // --------------------
     // Functions
     // --------------------
@@ -186,6 +191,12 @@ int main() {
         if (ImGui::Button("Exit"))
         {
             glfwSetWindowShouldClose(window, true);
+        }
+        ImGui::Text("%s Camera #%i", (CAPTURE_CAMERA ? "Capturing" : "Not Capturing"), CURRENT_CAMERA);
+        ImGui::InputScalar("Camera #", ImGuiDataType_S32, &CURRENT_CAMERA);
+        if (ImGui::Button("Toggle Camera Capture"))
+        {
+            CAPTURE_CAMERA = !CAPTURE_CAMERA;
         }
     }, false);
 
@@ -237,6 +248,7 @@ int main() {
             // Rendering
             ImGui::Render();
         }
+        if (CAPTURE_CAMERA) c.updateTexture();
         glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -257,6 +269,7 @@ int main() {
             glfwGetFramebufferSize(window, &width, &height);
             shaderPreview.setVec2("u_resolution", width, height);
         }
+        c.bind();
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         if (GUI_ENABLED) ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

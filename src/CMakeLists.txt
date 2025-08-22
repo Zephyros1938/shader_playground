@@ -1,5 +1,6 @@
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(OpenCV REQUIRED)   # <---- Add this
 
 add_library(glad STATIC glad.c)
 target_include_directories(glad PUBLIC ${PROJECT_SOURCE_DIR}/include)
@@ -32,11 +33,15 @@ add_executable(project_exe
     main.cpp
 )
 
-target_include_directories(project_exe PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(project_exe PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
+)
 
 target_link_libraries(project_exe PRIVATE
     glad
     imgui
     glfw
     OpenGL::GL
+    ${OpenCV_LIBS}
 )
